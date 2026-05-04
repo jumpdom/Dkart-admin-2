@@ -31,10 +31,14 @@
 
         /* Table Styling */
         .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
         th { text-align: left; padding: 12px; color: #888; font-size: 12px; border-bottom: 1px solid #333; text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: top; }
-        .addr-cell { max-width: 200px; font-size: 12px; color: #ccc; line-height: 1.4; }
+        .addr-cell { max-width: 200px; font-size: 11px; color: #ccc; line-height: 1.4; }
+
+        /* Custom Dropdown for Status */
+        .status-select { background: #1a1a1a; color: var(--primary); border: 1px solid #333; padding: 5px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; }
+        .status-select:focus { border-color: var(--primary); }
 
         @media (max-width: 768px) {
             .sidebar { width: 60px; }
@@ -98,7 +102,7 @@
                         <th>Product & Size</th>
                         <th>Price</th>
                         <th>Address</th>
-                        <th>Status</th>
+                        <th>Update Status</th>
                     </tr>
                 </thead>
                 <tbody id="order-list"></tbody>
@@ -109,7 +113,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAchWzhIxqmS7G0HPpvuq6WBwcr8pXzFAE",
@@ -137,18 +141,40 @@
         document.getElementById('c-prods').innerText = p.size;
     }
 
+    // Function to change status in Firebase
+    window.changeStatus = async (orderId, newStatus) => {
+        try {
+            const orderRef = doc(db, "orders", orderId);
+            await updateDoc(orderRef, { status: newStatus });
+            alert("Status updated to: " + newStatus);
+        } catch (e) {
+            console.error("Error updating status: ", e);
+            alert("Kuch garbar ho gayi!");
+        }
+    };
+
     async function fetchOrders() {
         const snap = await getDocs(query(collection(db, "orders"), orderBy("time", "desc")));
         const tbody = document.getElementById('order-list');
         tbody.innerHTML = "";
-        snap.forEach(doc => {
-            const o = doc.data();
+        snap.forEach(docSnap => {
+            const o = docSnap.data();
+            const orderId = docSnap.id;
+            const currentStatus = o.status || "Pending";
+
             tbody.innerHTML += `<tr>
                 <td><b>${o.customer}</b><br><small style="color:var(--primary)">${o.phone}</small></td>
                 <td>${o.name}<br><small style="color:#888">Size: ${o.size || 'N/A'}</small></td>
                 <td>₹${o.price}</td>
                 <td class="addr-cell">${o.address || '<span style="color:#555">No Address</span>'}</td>
-                <td><span style="background:var(--primary); color:black; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:800">NEW</span></td>
+                <td>
+                    <select class="status-select" onchange="changeStatus('${orderId}', this.value)">
+                        <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Packed" ${currentStatus === 'Packed' ? 'selected' : ''}>Packed</option>
+                        <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                        <option value="Delivered" ${currentStatus === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                    </select>
+                </td>
             </tr>`;
         });
     }
