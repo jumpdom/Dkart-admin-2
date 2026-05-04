@@ -3,142 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dkart Admin Pro | 2026 Edition</title>
+    <title>Dkart Admin | Firebase Powered</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { --primary: #ffff00; --dark: #000000; --card-bg: #111111; --text: #ffffff; --green: #25D366; }
+        :root { --primary: #ffff00; --dark: #000000; --card-bg: #111111; --text: #ffffff; }
         body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); margin: 0; display: flex; }
         
-        /* Sidebar Navigation */
-        .sidebar { width: 260px; height: 100vh; background: var(--card-bg); border-right: 1px solid #222; position: fixed; z-index: 100; }
+        .sidebar { width: 260px; height: 100vh; background: var(--card-bg); border-right: 1px solid #222; position: fixed; }
         .logo-area { padding: 30px 20px; font-weight: 800; font-size: 24px; color: var(--primary); border-bottom: 1px solid #222; text-align: center; }
-        .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #888; transition: 0.3s; font-weight: 600; }
+        .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #888; transition: 0.3s; }
         .nav-item:hover, .nav-item.active { color: var(--primary); background: #1a1a00; border-right: 4px solid var(--primary); }
 
-        /* Main Content Area */
         .main { margin-left: 260px; flex: 1; padding: 40px; min-height: 100vh; background: #050505; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .content-card { background: var(--card-bg); padding: 30px; border-radius: 20px; border: 1px solid #222; }
+        .content-card { background: var(--card-bg); padding: 25px; border-radius: 15px; border: 1px solid #222; margin-bottom: 25px; }
 
-        /* Form Layout */
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .full-width { grid-column: span 2; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 8px; font-size: 12px; color: #aaa; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-        input, select, textarea { width: 100%; padding: 14px; background: #000; border: 1px solid #333; border-radius: 10px; color: white; font-size: 14px; }
-        input:focus { border-color: var(--primary); outline: none; }
-
-        /* Size Selector Styling */
-        .size-box { display: flex; gap: 10px; flex-wrap: wrap; background: #000; padding: 15px; border-radius: 10px; border: 1px solid #333; }
-        .size-option { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; padding: 5px 10px; border-radius: 5px; transition: 0.2s; }
-        .size-option input { width: auto; cursor: pointer; }
-
-        /* Buttons */
-        .btn-primary { background: var(--primary); color: #000; padding: 18px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; font-size: 16px; margin-top: 20px; text-transform: uppercase; transition: 0.3s; }
-        .btn-primary:hover { box-shadow: 0 0 20px rgba(255, 255, 0, 0.3); transform: translateY(-2px); }
-
-        /* Inventory Table */
+        /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; padding: 15px; color: #888; font-size: 13px; border-bottom: 1px solid #333; }
-        td { padding: 15px; border-bottom: 1px solid #222; font-size: 14px; }
-        .p-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #222; }
-        .badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 800; }
+        th { text-align: left; padding: 12px; color: #888; font-size: 13px; border-bottom: 1px solid #333; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
+        .p-img { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; }
+
+        /* Form Controls */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        input, select, textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #333; border-radius: 8px; color: white; margin-top: 5px; }
+        .btn-main { background: var(--primary); color: #000; padding: 15px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 20px; }
         
-        @media (max-width: 900px) {
-            .sidebar { width: 70px; }
-            .sidebar span { display: none; }
-            .main { margin-left: 70px; padding: 20px; }
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-        }
+        .status-tag { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #1a1a00; color: var(--primary); }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <div class="logo-area">DKART <span style="color:white">PRO</span></div>
+    <div class="logo-area">DKART <span style="color:white">CMS</span></div>
     <div class="nav-links">
-        <div class="nav-item active" onclick="showSec('upload')"><i class="fa-solid fa-plus-circle"></i> <span>Add Product</span></div>
-        <div class="nav-item" onclick="showSec('list')"><i class="fa-solid fa-boxes-stacked"></i> <span>Manage Inventory</span></div>
-        <div class="nav-item" onclick="window.open('https://wa.me/918521694137', '_blank')"><i class="fa-brands fa-whatsapp" style="color:var(--green)"></i> <span>Help Desk</span></div>
+        <div class="nav-item active" onclick="showSec('dash')"><i class="fa-solid fa-house"></i> <span>Overview</span></div>
+        <div class="nav-item" onclick="showSec('upload')"><i class="fa-solid fa-plus"></i> <span>Add Product</span></div>
+        <div class="nav-item" onclick="showSec('orders')"><i class="fa-solid fa-shopping-bag"></i> <span>Orders List</span></div>
     </div>
 </div>
 
 <div class="main">
-    <!-- Upload Product Section -->
-    <div id="upload-sec">
-        <div class="header"><h1>Upload New Product</h1></div>
-        <div class="content-card">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Product Name</label>
-                    <input type="text" id="p-name" placeholder="Ex: Stylish Cotton T-Shirt">
-                </div>
-                <div class="form-group">
-                    <label>Category</label>
-                    <select id="p-cat">
-                        <option>Fashion</option>
-                        <option>Mobile</option>
-                        <option>Gadgets</option>
-                        <option>Watch</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Price (₹)</label>
-                    <input type="number" id="p-price" placeholder="499">
-                </div>
-                <div class="form-group">
-                    <label>Stock Status</label>
-                    <select id="p-status">
-                        <option value="In Stock">In Stock</option>
-                        <option value="Out of Stock">Out of Stock</option>
-                    </select>
-                </div>
-                <div class="form-group full-width">
-                    <label>Main Photo URL (Image Link)</label>
-                    <input type="text" id="p-img" placeholder="Paste link from Meesho/Shopsy/Photos">
-                </div>
-                
-                <!-- Size Options -->
-                <div class="form-group full-width">
-                    <label>Available Sizes</label>
-                    <div class="size-box">
-                        <label class="size-option"><input type="checkbox" name="p-size" value="S"> S</label>
-                        <label class="size-option"><input type="checkbox" name="p-size" value="M"> M</label>
-                        <label class="size-option"><input type="checkbox" name="p-size" value="L"> L</label>
-                        <label class="size-option"><input type="checkbox" name="p-size" value="XL"> XL</label>
-                        <label class="size-option"><input type="checkbox" name="p-size" value="XXL"> XXL</label>
-                    </div>
-                </div>
-
-                <div class="form-group full-width">
-                    <label>Product Description & Quality Details</label>
-                    <textarea id="p-desc" rows="4" placeholder="Mention material, warranty, delivery time, etc."></textarea>
-                </div>
-            </div>
-            <button class="btn-primary" id="save-btn">Publish to Dkart App</button>
+    <div id="dash-sec">
+        <h1>Dashboard Overview</h1>
+        <div style="display:flex; gap:20px;">
+            <div class="content-card" style="flex:1"><h3>Orders</h3><p id="count-ords" style="font-size:30px; margin:0; color:var(--primary)">0</p></div>
+            <div class="content-card" style="flex:1"><h3>Products</h3><p id="count-prods" style="font-size:30px; margin:0; color:var(--primary)">0</p></div>
         </div>
     </div>
 
-    <!-- Inventory Management Section -->
-    <div id="list-sec" style="display:none">
-        <div class="header"><h1>All Products</h1></div>
-        <div class="content-card" style="overflow-x: auto;">
+    <div id="upload-sec" style="display:none">
+        <h1>Upload Product</h1>
+        <div class="content-card">
+            <div class="form-grid">
+                <div><label>Product Name</label><input type="text" id="p-name"></div>
+                <div><label>Price (₹)</label><input type="number" id="p-price"></div>
+                <div style="grid-column: span 2;"><label>Photo Link</label><input type="text" id="p-img-url"></div>
+                <div>
+                    <label>Sizes</label>
+                    <div style="margin-top:10px;">
+                        <input type="checkbox" name="sz" value="S"> S &nbsp;
+                        <input type="checkbox" name="sz" value="M"> M &nbsp;
+                        <input type="checkbox" name="sz" value="L"> L &nbsp;
+                        <input type="checkbox" name="sz" value="XL"> XL
+                    </div>
+                </div>
+            </div>
+            <button class="btn-main" id="save-btn">Push to Firebase</button>
+        </div>
+    </div>
+
+    <div id="orders-sec" style="display:none">
+        <h1>Orders Management</h1>
+        <div class="content-card" style="overflow-x:auto">
             <table>
                 <thead>
                     <tr>
-                        <th>Image</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Category</th>
-                        <th>Sizes</th>
+                        <th>Customer</th>
+                        <th>Product</th>
+                        <th>Amount</th>
+                        <th>Address</th>
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody id="inventory-table">
-                    <!-- Data will load here -->
-                </tbody>
+                <tbody id="order-table"></tbody>
             </table>
         </div>
     </div>
@@ -148,7 +96,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-    // Same Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyAchWzhIxqmS7G0HPpvuq6WBwcr8pXzFAE",
       authDomain: "dkart-87860.firebaseapp.com",
@@ -159,64 +106,54 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Section Control
     window.showSec = (id) => {
-        ['upload', 'list'].forEach(s => document.getElementById(s + '-sec').style.display = 'none');
+        ['dash', 'upload', 'orders'].forEach(s => document.getElementById(s + '-sec').style.display = 'none');
         document.getElementById(id + '-sec').style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         event.currentTarget.classList.add('active');
-        if(id === 'list') loadProducts();
+        if(id === 'orders') fetchOrders();
+        if(id === 'dash') updateStats();
     };
 
-    // Save Logic
-    document.getElementById('save-btn').onclick = async () => {
-        const name = document.getElementById('p-name').value;
-        const price = document.getElementById('p-price').value;
-        const img = document.getElementById('p-img').value;
-        const cat = document.getElementById('p-cat').value;
-        const desc = document.getElementById('p-desc').value;
-        const status = document.getElementById('p-status').value;
-        
-        // Get Selected Sizes
-        const sizes = Array.from(document.querySelectorAll('input[name="p-size"]:checked')).map(cb => cb.value);
+    async function updateStats() {
+        const o = await getDocs(collection(db, "orders"));
+        const p = await getDocs(collection(db, "products"));
+        document.getElementById('count-ords').innerText = o.size;
+        document.getElementById('count-prods').innerText = p.size;
+    }
 
-        if(!name || !price || !img) {
-            return alert("Amit bhai, Name, Price aur Photo link zaruri hai!");
-        }
-
-        try {
-            await addDoc(collection(db, "products"), {
-                name, price, images: [img], category: cat, desc, status, sizes, time: serverTimestamp()
-            });
-            alert("Product Live Ho Gaya! 🚀");
-            location.reload();
-        } catch(e) {
-            alert("Error: " + e.message);
-        }
-    };
-
-    // Load Inventory
-    async function loadProducts() {
-        const q = query(collection(db, "products"), orderBy("time", "desc"));
-        const snap = await getDocs(q);
-        const tbody = document.getElementById('inventory-table');
+    async function fetchOrders() {
+        const snap = await getDocs(query(collection(db, "orders"), orderBy("time", "desc")));
+        const tbody = document.getElementById('order-table');
         tbody.innerHTML = "";
-        
         snap.forEach(doc => {
-            const p = doc.data();
-            const sizeText = p.sizes && p.sizes.length ? p.sizes.join(', ') : 'No Size';
-            tbody.innerHTML += `
-                <tr>
-                    <td><img src="${p.images[0]}" class="p-thumb" onerror="this.src='https://via.placeholder.com/50'"></td>
-                    <td style="font-weight:600">${p.name}</td>
-                    <td style="color:var(--primary)">₹${p.price}</td>
-                    <td>${p.category}</td>
-                    <td><small>${sizeText}</small></td>
-                    <td><span class="badge" style="background:${p.status==='In Stock'?'#004400':'#440000'}; color:${p.status==='In Stock'?'#0f0':'#f00'}">${p.status}</span></td>
-                </tr>
-            `;
+            const o = doc.data();
+            tbody.innerHTML += `<tr>
+                <td><b>${o.customer}</b><br><small>${o.phone}</small></td>
+                <td>${o.name}</td>
+                <td>₹${o.price}</td>
+                <td><small>${o.address}</small></td>
+                <td><span class="status-tag">RECIEVED</span></td>
+            </tr>`;
         });
     }
+
+    document.getElementById('save-btn').onclick = async () => {
+        const sizes = Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c => c.value);
+        const data = {
+            name: document.getElementById('p-name').value,
+            price: document.getElementById('p-price').value,
+            images: [document.getElementById('p-img-url').value],
+            sizes: sizes,
+            time: serverTimestamp()
+        };
+        if(!data.name) return alert("Pehle details bhariye Amit bhai!");
+        await addDoc(collection(db, "products"), data);
+        alert("Firebase mein save ho gaya! ✅");
+        location.reload();
+    };
+
+    updateStats();
 </script>
 </body>
 </html>
