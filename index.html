@@ -28,6 +28,8 @@
         .size-item { display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; }
 
         .btn-main { background: var(--primary); color: #000; padding: 16px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 15px; font-size: 16px; text-transform: uppercase; }
+        .btn-edit { background: #222; color: var(--primary); border: 1px solid var(--primary); padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .btn-del { background: #222; color: #ff4444; border: 1px solid #ff4444; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
 
         /* Table Styling */
         .table-wrapper { overflow-x: auto; }
@@ -36,9 +38,8 @@
         td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: top; }
         .addr-cell { max-width: 200px; font-size: 11px; color: #ccc; line-height: 1.4; }
 
-        /* Custom Dropdown for Status */
-        .status-select { background: #1a1a1a; color: var(--primary); border: 1px solid #333; padding: 5px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none; }
-        .status-select:focus { border-color: var(--primary); }
+        /* Status Dropdown */
+        .status-select { background: #1a1a1a; color: var(--primary); border: 1px solid #333; padding: 5px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; }
 
         @media (max-width: 768px) {
             .sidebar { width: 60px; }
@@ -50,15 +51,17 @@
 <body>
 
 <div class="sidebar">
-    <div class="logo-area">DKART <span style="color:white">CMS</span></div>
+    <div class="logo-area">DKART <span style="color:white">PRO</span></div>
     <div class="nav-links">
         <div class="nav-item active" onclick="showSec('dash')"><i class="fa-solid fa-chart-simple"></i> <span>Overview</span></div>
         <div class="nav-item" onclick="showSec('upload')"><i class="fa-solid fa-plus-square"></i> <span>Add Product</span></div>
+        <div class="nav-item" onclick="showSec('manage')"><i class="fa-solid fa-list-check"></i> <span>Manage Items</span></div>
         <div class="nav-item" onclick="showSec('orders')"><i class="fa-solid fa-bag-shopping"></i> <span>Orders</span></div>
     </div>
 </div>
 
 <div class="main">
+    <!-- DASHBOARD SECTION -->
     <div id="dash-sec">
         <h1>Dashboard</h1>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -67,9 +70,11 @@
         </div>
     </div>
 
+    <!-- UPLOAD / EDIT SECTION -->
     <div id="upload-sec" style="display:none">
-        <h1>Upload Product</h1>
+        <h1 id="upload-title">Upload Product</h1>
         <div class="content-card">
+            <input type="hidden" id="edit-id">
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 <div style="display: flex; gap: 10px;">
                     <div style="flex:1"><label>Product Name</label><input type="text" id="p-name" placeholder="Name"></div>
@@ -84,14 +89,34 @@
                         <label class="size-item"><input type="checkbox" name="sz" value="L"> L</label>
                         <label class="size-item"><input type="checkbox" name="sz" value="XL"> XL</label>
                         <label class="size-item"><input type="checkbox" name="sz" value="XXL"> XXL</label>
+                        <label class="size-item" style="color:var(--primary)"><input type="checkbox" name="sz" value="Free Size"> Free Size</label>
                     </div>
                 </div>
                 <div><label>Description</label><textarea id="p-desc" rows="3" placeholder="Details..."></textarea></div>
             </div>
             <button class="btn-main" id="save-btn">Push to Firebase</button>
+            <button class="btn-main" id="cancel-edit" style="display:none; background:#333; color:white; margin-top:5px">Cancel Edit</button>
         </div>
     </div>
 
+    <!-- MANAGE ITEMS SECTION -->
+    <div id="manage-sec" style="display:none">
+        <h1>Manage Products</h1>
+        <div class="content-card table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="prod-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ORDERS SECTION -->
     <div id="orders-sec" style="display:none">
         <h1>Orders List</h1>
         <div class="content-card table-wrapper">
@@ -113,7 +138,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAchWzhIxqmS7G0HPpvuq6WBwcr8pXzFAE",
@@ -126,12 +151,14 @@
     const db = getFirestore(app);
 
     window.showSec = (id) => {
-        ['dash', 'upload', 'orders'].forEach(s => document.getElementById(s + '-sec').style.display = 'none');
+        ['dash', 'upload', 'orders', 'manage'].forEach(s => document.getElementById(s + '-sec').style.display = 'none');
         document.getElementById(id + '-sec').style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         if(event) event.currentTarget.classList.add('active');
+        
         if(id === 'orders') fetchOrders();
         if(id === 'dash') updateStats();
+        if(id === 'manage') fetchProducts();
     };
 
     async function updateStats() {
@@ -141,16 +168,93 @@
         document.getElementById('c-prods').innerText = p.size;
     }
 
-    // Function to change status in Firebase
+    // --- MANAGE PRODUCTS (DELETE & EDIT LOGIC) ---
+    async function fetchProducts() {
+        const snap = await getDocs(query(collection(db, "products"), orderBy("time", "desc")));
+        const tbody = document.getElementById('prod-list');
+        tbody.innerHTML = "";
+        snap.forEach(dSnap => {
+            const p = dSnap.data();
+            tbody.innerHTML += `<tr>
+                <td><b>${p.name}</b></td>
+                <td>₹${p.price}</td>
+                <td>
+                    <button class="btn-edit" onclick="startEdit('${dSnap.id}')"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-del" onclick="deleteProd('${dSnap.id}')"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    window.deleteProd = async (id) => {
+        if(confirm("Pakka delete karna hai?")) {
+            await deleteDoc(doc(db, "products", id));
+            fetchProducts();
+            updateStats();
+        }
+    };
+
+    window.startEdit = async (id) => {
+        const dSnap = await getDoc(doc(db, "products", id));
+        const p = dSnap.data();
+        
+        document.getElementById('upload-title').innerText = "Edit Product";
+        document.getElementById('edit-id').value = id;
+        document.getElementById('p-name').value = p.name;
+        document.getElementById('p-price').value = p.price;
+        document.getElementById('p-img').value = p.images[0];
+        document.getElementById('p-desc').value = p.desc;
+        
+        // Reset and check sizes
+        document.querySelectorAll('input[name="sz"]').forEach(cb => {
+            cb.checked = p.sizes.includes(cb.value);
+        });
+
+        document.getElementById('save-btn').innerText = "Update Product";
+        document.getElementById('cancel-edit').style.display = "block";
+        showSec('upload');
+    };
+
+    document.getElementById('cancel-edit').onclick = () => {
+        location.reload(); // Simple way to reset form
+    };
+
+    // --- SAVE / UPDATE LOGIC ---
+    document.getElementById('save-btn').onclick = async () => {
+        const btn = document.getElementById('save-btn');
+        const editId = document.getElementById('edit-id').value;
+        const sizes = Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c => c.value);
+        
+        const data = {
+            name: document.getElementById('p-name').value,
+            price: document.getElementById('p-price').value,
+            images: [document.getElementById('p-img').value],
+            sizes: sizes,
+            desc: document.getElementById('p-desc').value,
+            time: serverTimestamp()
+        };
+
+        if(!data.name || !data.price) return alert("Bhai, details to bharo!");
+        btn.disabled = true;
+
+        try {
+            if(editId) {
+                await updateDoc(doc(db, "products", editId), data);
+                alert("Updated successfully! 🔥");
+            } else {
+                await addDoc(collection(db, "products"), data);
+                alert("Product Added! 🔥");
+            }
+            location.reload();
+        } catch(e) { alert("Error!"); btn.disabled = false; }
+    };
+
+    // --- ORDERS LOGIC ---
     window.changeStatus = async (orderId, newStatus) => {
         try {
-            const orderRef = doc(db, "orders", orderId);
-            await updateDoc(orderRef, { status: newStatus });
-            alert("Status updated to: " + newStatus);
-        } catch (e) {
-            console.error("Error updating status: ", e);
-            alert("Kuch garbar ho gayi!");
-        }
+            await updateDoc(doc(db, "orders", orderId), { status: newStatus });
+            alert("Status updated!");
+        } catch (e) { alert("Error updating status!"); }
     };
 
     async function fetchOrders() {
@@ -159,16 +263,14 @@
         tbody.innerHTML = "";
         snap.forEach(docSnap => {
             const o = docSnap.data();
-            const orderId = docSnap.id;
             const currentStatus = o.status || "Pending";
-
             tbody.innerHTML += `<tr>
                 <td><b>${o.customer}</b><br><small style="color:var(--primary)">${o.phone}</small></td>
                 <td>${o.name}<br><small style="color:#888">Size: ${o.size || 'N/A'}</small></td>
                 <td>₹${o.price}</td>
-                <td class="addr-cell">${o.address || '<span style="color:#555">No Address</span>'}</td>
+                <td class="addr-cell">${o.address || 'No Address'}</td>
                 <td>
-                    <select class="status-select" onchange="changeStatus('${orderId}', this.value)">
+                    <select class="status-select" onchange="changeStatus('${docSnap.id}', this.value)">
                         <option value="Pending" ${currentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Packed" ${currentStatus === 'Packed' ? 'selected' : ''}>Packed</option>
                         <option value="Shipped" ${currentStatus === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -178,26 +280,6 @@
             </tr>`;
         });
     }
-
-    document.getElementById('save-btn').onclick = async () => {
-        const btn = document.getElementById('save-btn');
-        const sizes = Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c => c.value);
-        const data = {
-            name: document.getElementById('p-name').value,
-            price: document.getElementById('p-price').value,
-            images: [document.getElementById('p-img').value],
-            sizes: sizes,
-            desc: document.getElementById('p-desc').value,
-            time: serverTimestamp()
-        };
-        if(!data.name || !data.price) return alert("Bhai, details to bharo!");
-        
-        btn.disabled = true;
-        btn.innerText = "Uploading...";
-        await addDoc(collection(db, "products"), data);
-        alert("Success! 🔥");
-        location.reload();
-    };
 
     updateStats();
 </script>
