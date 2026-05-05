@@ -61,7 +61,6 @@
 </div>
 
 <div class="main">
-    <!-- DASHBOARD SECTION -->
     <div id="dash-sec">
         <h1>Dashboard</h1>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -70,7 +69,6 @@
         </div>
     </div>
 
-    <!-- UPLOAD / EDIT SECTION -->
     <div id="upload-sec" style="display:none">
         <h1 id="upload-title">Upload Product</h1>
         <div class="content-card">
@@ -81,7 +79,6 @@
                     <div style="max-width: 100px;"><label>Price</label><input type="number" id="p-price" placeholder="₹"></div>
                 </div>
                 
-                <!-- NEW CATEGORY OPTION -->
                 <div>
                     <label>Product Category</label>
                     <select id="p-category">
@@ -94,7 +91,13 @@
                     </select>
                 </div>
 
-                <div><label>Photo Link</label><input type="text" id="p-img" placeholder="Paste image URL"></div>
+                <div>
+                    <label>Product Image</label>
+                    <input type="file" id="p-file" accept="image/*" style="padding: 8px; border: 1px dashed var(--primary);">
+                    <small id="upload-status" style="color:var(--primary); display:block; margin-top:5px; font-weight:600;"></small>
+                    <input type="hidden" id="p-img">
+                </div>
+
                 <div>
                     <label>Available Sizes</label>
                     <div class="size-container">
@@ -113,7 +116,6 @@
         </div>
     </div>
 
-    <!-- MANAGE ITEMS SECTION -->
     <div id="manage-sec" style="display:none">
         <h1>Manage Products</h1>
         <div class="content-card table-wrapper">
@@ -130,7 +132,6 @@
         </div>
     </div>
 
-    <!-- ORDERS SECTION -->
     <div id="orders-sec" style="display:none">
         <h1>Orders List</h1>
         <div class="content-card table-wrapper">
@@ -153,16 +154,19 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAchWzhIxqmS7G0HPpvuq6WBwcr8pXzFAE",
       authDomain: "dkart-87860.firebaseapp.com",
       projectId: "dkart-87860",
-      appId: "1:894407834952:web:3067589b758c9819fe877d"
+      appId: "1:894407834952:web:3067589b758c9819fe877d",
+      storageBucket: "dkart-87860.appspot.com"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
     window.showSec = (id) => {
         ['dash', 'upload', 'orders', 'manage'].forEach(s => {
@@ -171,7 +175,7 @@
         });
         document.getElementById(id + '-sec').style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        if(event && event.currentTarget) event.currentTarget.classList.add('active');
+        if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
         
         if(id === 'orders') fetchOrders();
         if(id === 'dash') updateStats();
@@ -219,7 +223,7 @@
         document.getElementById('p-name').value = p.name;
         document.getElementById('p-price').value = p.price;
         document.getElementById('p-category').value = p.category || "men";
-        document.getElementById('p-img').value = p.images[0];
+        document.getElementById('p-img').value = p.images ? p.images[0] : "";
         document.getElementById('p-desc').value = p.desc;
         
         document.querySelectorAll('input[name="sz"]').forEach(cb => {
@@ -235,16 +239,39 @@
         location.reload();
     };
 
+    // PHOTO UPLOAD LOGIC
+    document.getElementById('p-file').onchange = async (e) => {
+        const file = e.target.files[0];
+        const status = document.getElementById('upload-status');
+        if(!file) return;
+        
+        status.innerText = "Uploading... Please wait";
+        const sRef = ref(storage, 'products/' + Date.now() + "_" + file.name);
+        
+        try {
+            await uploadBytes(sRef, file);
+            const url = await getDownloadURL(sRef);
+            document.getElementById('p-img').value = url;
+            status.innerText = "Photo Uploaded! ✅";
+        } catch(err) {
+            status.innerText = "Upload Failed!";
+            console.error(err);
+        }
+    };
+
     document.getElementById('save-btn').onclick = async () => {
         const btn = document.getElementById('save-btn');
         const editId = document.getElementById('edit-id').value;
+        const imgUrl = document.getElementById('p-img').value;
         const sizes = Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c => c.value);
         
+        if(!imgUrl && !editId) return alert("Pehle photo upload hone dein!");
+
         const data = {
             name: document.getElementById('p-name').value,
             price: document.getElementById('p-price').value,
-            category: document.getElementById('p-category').value, // SAVING CATEGORY
-            images: [document.getElementById('p-img').value],
+            category: document.getElementById('p-category').value,
+            images: [imgUrl],
             sizes: sizes,
             desc: document.getElementById('p-desc').value,
             time: serverTimestamp()
@@ -255,6 +282,8 @@
 
         try {
             if(editId) {
+                // If editing and no new image uploaded, keep old image
+                if(!imgUrl) delete data.images; 
                 await updateDoc(doc(db, "products", editId), data);
                 alert("Updated successfully! 🔥");
             } else {
