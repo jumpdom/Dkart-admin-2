@@ -80,6 +80,20 @@
                     <div style="flex:1"><label>Product Name</label><input type="text" id="p-name" placeholder="Name"></div>
                     <div style="max-width: 100px;"><label>Price</label><input type="number" id="p-price" placeholder="₹"></div>
                 </div>
+                
+                <!-- NEW CATEGORY OPTION -->
+                <div>
+                    <label>Product Category</label>
+                    <select id="p-category">
+                        <option value="men">Men</option>
+                        <option value="women">Women</option>
+                        <option value="cosmetic">Cosmetic</option>
+                        <option value="kitchen">Kitchen</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="mobile">Mobile</option>
+                    </select>
+                </div>
+
                 <div><label>Photo Link</label><input type="text" id="p-img" placeholder="Paste image URL"></div>
                 <div>
                     <label>Available Sizes</label>
@@ -151,10 +165,13 @@
     const db = getFirestore(app);
 
     window.showSec = (id) => {
-        ['dash', 'upload', 'orders', 'manage'].forEach(s => document.getElementById(s + '-sec').style.display = 'none');
+        ['dash', 'upload', 'orders', 'manage'].forEach(s => {
+            const sec = document.getElementById(s + '-sec');
+            if(sec) sec.style.display = 'none';
+        });
         document.getElementById(id + '-sec').style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        if(event) event.currentTarget.classList.add('active');
+        if(event && event.currentTarget) event.currentTarget.classList.add('active');
         
         if(id === 'orders') fetchOrders();
         if(id === 'dash') updateStats();
@@ -168,7 +185,6 @@
         document.getElementById('c-prods').innerText = p.size;
     }
 
-    // --- MANAGE PRODUCTS (DELETE & EDIT LOGIC) ---
     async function fetchProducts() {
         const snap = await getDocs(query(collection(db, "products"), orderBy("time", "desc")));
         const tbody = document.getElementById('prod-list');
@@ -176,7 +192,7 @@
         snap.forEach(dSnap => {
             const p = dSnap.data();
             tbody.innerHTML += `<tr>
-                <td><b>${p.name}</b></td>
+                <td><b>${p.name}</b><br><small style="color:#888">${p.category || 'No Category'}</small></td>
                 <td>₹${p.price}</td>
                 <td>
                     <button class="btn-edit" onclick="startEdit('${dSnap.id}')"><i class="fa-solid fa-pen"></i></button>
@@ -202,12 +218,12 @@
         document.getElementById('edit-id').value = id;
         document.getElementById('p-name').value = p.name;
         document.getElementById('p-price').value = p.price;
+        document.getElementById('p-category').value = p.category || "men";
         document.getElementById('p-img').value = p.images[0];
         document.getElementById('p-desc').value = p.desc;
         
-        // Reset and check sizes
         document.querySelectorAll('input[name="sz"]').forEach(cb => {
-            cb.checked = p.sizes.includes(cb.value);
+            cb.checked = p.sizes ? p.sizes.includes(cb.value) : false;
         });
 
         document.getElementById('save-btn').innerText = "Update Product";
@@ -216,10 +232,9 @@
     };
 
     document.getElementById('cancel-edit').onclick = () => {
-        location.reload(); // Simple way to reset form
+        location.reload();
     };
 
-    // --- SAVE / UPDATE LOGIC ---
     document.getElementById('save-btn').onclick = async () => {
         const btn = document.getElementById('save-btn');
         const editId = document.getElementById('edit-id').value;
@@ -228,6 +243,7 @@
         const data = {
             name: document.getElementById('p-name').value,
             price: document.getElementById('p-price').value,
+            category: document.getElementById('p-category').value, // SAVING CATEGORY
             images: [document.getElementById('p-img').value],
             sizes: sizes,
             desc: document.getElementById('p-desc').value,
@@ -249,12 +265,11 @@
         } catch(e) { alert("Error!"); btn.disabled = false; }
     };
 
-    // --- ORDERS LOGIC ---
     window.changeStatus = async (orderId, newStatus) => {
         try {
             await updateDoc(doc(db, "orders", orderId), { status: newStatus });
             alert("Status updated!");
-        } catch (e) { alert("Error updating status!"); }
+        } catch (e) { alert("Error!"); }
     };
 
     async function fetchOrders() {
