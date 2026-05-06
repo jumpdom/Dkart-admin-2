@@ -147,7 +147,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // FIX 1: window object par attach kiya taaki button click kaam kare
+    // Sidebar navigation
     window.showSec = (id) => {
         ['dash', 'upload', 'orders', 'manage'].forEach(s => {
             document.getElementById(s + '-sec').style.display = 'none';
@@ -184,6 +184,7 @@
         });
     }
 
+    // Window functions for buttons
     window.deleteProd = async (id) => {
         if(confirm("Delete karna hai?")) {
             await deleteDoc(doc(db, "products", id));
@@ -246,20 +247,20 @@
         location.reload();
     };
 
-    // FIX 2: window par attach kiya taaki onchange kaam kare
+    // FIXED: STATUS UPDATE LOGIC
     window.changeStatus = async (id, val) => {
         try {
-            await updateDoc(doc(db, "orders", id), { status: val });
-            alert("Status Update Ho Gaya! Customer ko dikh jayega.");
+            const orderRef = doc(db, "orders", id);
+            await updateDoc(orderRef, { status: val });
+            alert("Status Updated Successfully! ✅");
         } catch (e) {
-            console.error(e);
-            alert("Galti hui!");
+            console.error("Update Error:", e);
+            alert("Update fail ho gaya!");
         }
     };
 
     async function fetchOrders() {
         const q = query(collection(db, "orders"), orderBy("time", "desc"));
-        // Real-time listener laga diya taaki data turant load ho
         onSnapshot(q, (snap) => {
             const tbody = document.getElementById('order-list');
             tbody.innerHTML = "";
@@ -271,7 +272,7 @@
                     <td>₹${o.price}</td>
                     <td>${o.address}</td>
                     <td>
-                        <select onchange="changeStatus('${docSnap.id}', this.value)" style="border: 1px solid var(--primary); padding: 5px;">
+                        <select onchange="changeStatus('${docSnap.id}', this.value)" style="background:#000; color:#fff; border:1px solid var(--primary); padding:5px; border-radius:5px;">
                             <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
                             <option value="Packed" ${o.status === 'Packed' ? 'selected' : ''}>Packed</option>
                             <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
