@@ -15,17 +15,13 @@
         .nav-item { padding: 15px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: #888; transition: 0.3s; font-size: 15px; }
         .nav-item:hover, .nav-item.active { color: var(--primary); background: #1a1a00; border-right: 4px solid var(--primary); }
         .main { margin-left: 260px; flex: 1; padding: 30px; min-height: 100vh; background: #050505; transition: 0.3s; }
-        .content-card { background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid #222; margin-bottom: 20px; }
+        .content-card { background: var(--card-bg); padding: 20px; border-radius: 15px; border: 1px solid #222; margin-bottom: 20px; overflow-x: auto; }
         label { display: block; margin-bottom: 8px; font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: 700; }
         input, select, textarea { width: 100%; padding: 12px; background: #000; border: 1px solid #333; border-radius: 8px; color: white; font-size: 14px; margin-bottom: 10px; }
-        .size-container { display: flex; flex-wrap: wrap; gap: 15px; background: #000; padding: 12px; border-radius: 8px; border: 1px solid #333; }
-        .size-item { display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; }
         .btn-main { background: var(--primary); color: #000; padding: 16px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 15px; font-size: 16px; text-transform: uppercase; }
-        .btn-edit { background: #222; color: var(--primary); border: 1px solid var(--primary); padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-        .btn-del { background: #222; color: #ff4444; border: 1px solid #ff4444; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
-        table { width: 100%; border-collapse: collapse; min-width: 650px; }
-        th { text-align: left; padding: 12px; color: #888; font-size: 12px; border-bottom: 1px solid #333; text-transform: uppercase; }
-        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: top; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: left; padding: 12px; color: #888; font-size: 12px; border-bottom: 1px solid #333; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
         @media (max-width: 768px) { .sidebar { width: 60px; } .sidebar span { display: none; } .main { margin-left: 60px; padding: 15px; } }
     </style>
 </head>
@@ -43,7 +39,7 @@
 
 <div class="main">
     <div id="dash-sec">
-        <h1>Dashboard Overview</h1>
+        <h1>Dashboard</h1>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="content-card"><h3>Orders</h3><p id="c-ords" style="font-size:28px; color:var(--primary); margin:0">0</p></div>
             <div class="content-card"><h3>Items</h3><p id="c-prods" style="font-size:28px; color:var(--primary); margin:0">0</p></div>
@@ -51,64 +47,34 @@
     </div>
 
     <div id="upload-sec" style="display:none">
-        <h1 id="upload-title">Upload Product</h1>
+        <h1>Upload Product</h1>
         <div class="content-card">
-            <input type="hidden" id="edit-id">
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <div style="display: flex; gap: 10px;">
-                    <div style="flex:1"><label>Product Name</label><input type="text" id="p-name" placeholder="Name"></div>
-                    <div style="max-width: 120px;"><label>Price</label><input type="number" id="p-price" placeholder="₹"></div>
-                </div>
-                <div>
-                    <label>Category</label>
-                    <select id="p-category">
-                        <option value="men">Men</option>
-                        <option value="women">Women</option>
-                        <option value="cosmetics">Cosmetics</option>
-                        <option value="kitchen">Kitchen</option>
-                        <option value="electronics">Electronics</option>
-                        <option value="mobile">Mobile</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Photo Link 1 (Main)</label><input type="text" id="p-img1" placeholder="URL 1">
-                    <label>Photo Link 2</label><input type="text" id="p-img2" placeholder="URL 2">
-                </div>
-                <div>
-                    <label>Available Sizes</label>
-                    <div class="size-container">
-                        <label class="size-item"><input type="checkbox" name="sz" value="S"> S</label>
-                        <label class="size-item"><input type="checkbox" name="sz" value="M"> M</label>
-                        <label class="size-item"><input type="checkbox" name="sz" value="L"> L</label>
-                        <label class="size-item"><input type="checkbox" name="sz" value="Free Size"> Free Size</label>
-                    </div>
-                </div>
-                <div><label>Description</label><textarea id="p-desc" rows="3"></textarea></div>
-            </div>
-            <button class="btn-main" id="save-btn">Push to Firebase</button>
+            <input type="text" id="p-name" placeholder="Product Name">
+            <input type="number" id="p-price" placeholder="Price">
+            <input type="text" id="p-img1" placeholder="Image URL">
+            <button class="btn-main" id="save-btn">Save Product</button>
         </div>
     </div>
 
     <div id="manage-sec" style="display:none">
-        <h1>Manage Products</h1>
-        <div class="content-card">
-            <table><thead><tr><th>Product</th><th>Price</th><th>Action</th></tr></thead>
-            <tbody id="prod-list"></tbody></table>
-        </div>
+        <h1>Manage</h1>
+        <div class="content-card"><table id="prod-table"><thead><tr><th>Name</th><th>Price</th></tr></thead><tbody id="prod-list"></tbody></table></div>
     </div>
 
     <div id="orders-sec" style="display:none">
-        <h1>Orders List</h1>
+        <h1>Orders</h1>
         <div class="content-card">
-            <table><thead><tr><th>Customer</th><th>Product</th><th>Price</th><th>Status</th></tr></thead>
-            <tbody id="order-list"></tbody></table>
+            <table>
+                <thead><tr><th>Customer</th><th>Product</th><th>Status</th></tr></thead>
+                <tbody id="order-list"></tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc, onSnapshot, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAchWzhIxqmS7G0HPpvuq6WBwcr8pXzFAE",
@@ -120,12 +86,23 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Global Functions for Mobile Compatibility
     window.showSec = (id) => {
         ['dash', 'upload', 'orders', 'manage'].forEach(s => document.getElementById(s + '-sec').style.display = 'none');
         document.getElementById(id + '-sec').style.display = 'block';
         if(id === 'orders') fetchOrders();
         if(id === 'dash') updateStats();
-        if(id === 'manage') fetchProducts();
+    };
+
+    window.changeStatus = async (orderId, newStatus) => {
+        try {
+            const orderRef = doc(db, "orders", orderId);
+            await updateDoc(orderRef, { status: newStatus });
+            alert("Status Updated Successfully!");
+        } catch (error) {
+            console.error(error);
+            alert("Error: " + error.message);
+        }
     };
 
     async function updateStats() {
@@ -135,20 +112,8 @@
         document.getElementById('c-prods').innerText = p.size;
     }
 
-    // --- STATUS UPDATE FIX ---
-    window.changeStatus = async (id, val) => {
-        try {
-            const orderRef = doc(db, "orders", id);
-            await updateDoc(orderRef, { status: val });
-            alert("Status updated to: " + val);
-        } catch (e) {
-            alert("Error: " + e.message);
-        }
-    };
-
-    async function fetchOrders() {
+    function fetchOrders() {
         const q = query(collection(db, "orders"), orderBy("time", "desc"));
-        // Real-time listener for orders
         onSnapshot(q, (snap) => {
             const tbody = document.getElementById('order-list');
             tbody.innerHTML = "";
@@ -156,15 +121,15 @@
                 const o = docSnap.data();
                 const id = docSnap.id;
                 tbody.innerHTML += `<tr>
-                    <td><b>${o.customer || 'N/A'}</b><br>${o.phone || ''}</td>
-                    <td>${o.name}<br><small>Size: ${o.size}</small></td>
-                    <td>₹${o.price}</td>
+                    <td>${o.customer || 'User'}</td>
+                    <td>${o.name}</td>
                     <td>
-                        <select onchange="changeStatus('${id}', this.value)" style="background:#000; color:#fff; border:1px solid yellow;">
+                        <select onchange="window.changeStatus('${id}', this.value)" style="background:#222; color:yellow; border:1px solid yellow; padding:5px; border-radius:5px;">
                             <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
                             <option value="Packed" ${o.status === 'Packed' ? 'selected' : ''}>Packed</option>
                             <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
                             <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                            <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                         </select>
                     </td>
                 </tr>`;
@@ -172,7 +137,16 @@
         });
     }
 
-    // (Add stats and product fetch call if needed)
+    document.getElementById('save-btn').onclick = async () => {
+        const name = document.getElementById('p-name').value;
+        const price = document.getElementById('p-price').value;
+        const img = document.getElementById('p-img1').value;
+        if(!name || !price) return alert("Fill details");
+        await addDoc(collection(db, "products"), { name, price, images: [img], time: serverTimestamp() });
+        alert("Product Added!");
+        location.reload();
+    };
+
     updateStats();
 </script>
 </body>
