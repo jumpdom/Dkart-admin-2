@@ -1,10 +1,11 @@
+html
 <!DOCTYPE html>
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dkart Admin Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="htt...ap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { --primary: #ffff00; --dark: #000000; --card-bg: #111111; --text: #ffffff; }
@@ -25,7 +26,16 @@
         .size-container { display: flex; flex-wrap: wrap; gap: 15px; background: #000; padding: 12px; border-radius: 8px; border: 1px solid #333; }
         .size-item { display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; }
 
+        .variant-list { background: #0a0a0a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+        .variant-item { display: flex; gap: 12px; align-items: center; padding: 10px; background: #111; border-radius: 6px; margin-bottom: 8px; }
+        .variant-item:last-child { margin-bottom: 0; }
+        .variant-color { width: 40px; height: 40px; border-radius: 6px; border: 2px solid #555; flex-shrink: 0; }
+        .variant-details { flex: 1; }
+        .variant-details input { margin-bottom: 6px; font-size: 13px; }
+        .variant-remove { background: #ff4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: 700; }
+
         .btn-main { background: var(--primary); color: #000; padding: 16px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 15px; font-size: 16px; text-transform: uppercase; }
+        .btn-secondary { background: #222; color: #fff; padding: 12px; border: 1px solid #555; margin-top: 10px; }
         .btn-edit { background: #222; color: var(--primary); border: 1px solid var(--primary); padding: 5px 10px; border-radius: 5px; cursor: pointer; }
         .btn-del { background: #222; color: #ff4444; border: 1px solid #ff4444; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: 5px; }
 
@@ -101,6 +111,13 @@
                         <label class="size-item" style="color:var(--primary)"><input type="checkbox" name="sz" value="Free Size"> Free Size</label>
                     </div>
                 </div>
+
+                <div>
+                    <label>Product Variants (Colors)</label>
+                    <div class="variant-list" id="variant-list"></div>
+                    <button class="btn-secondary" onclick="addVariantField()"><i class="fa-solid fa-plus"></i> Add Colour Variant</button>
+                </div>
+
                 <div><label>Description</label><textarea id="p-desc" rows="3" placeholder="Details..."></textarea></div>
             </div>
             <button class="btn-main" id="save-btn">Push to Firebase</button>
@@ -113,7 +130,7 @@
         <div class="content-card table-wrapper">
             <table>
                 <thead>
-                    <tr><th>Product</th><th>Price</th><th>Action</th></tr>
+                    <tr><th>Product</th><th>Price</th><th>Variants</th><th>Action</th></tr>
                 </thead>
                 <tbody id="prod-list"></tbody>
             </table>
@@ -138,7 +155,7 @@
     import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAchWzhIxqmS7G0HPpvuq6WBwcr8pXzFAE",
+      apiKey: "AIz...FAE",
       authDomain: "dkart-87860.firebaseapp.com",
       projectId: "dkart-87860",
       appId: "1:894407834952:web:3067589b758c9819fe877d"
@@ -146,6 +163,8 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
+    let variants = [];
 
     window.showSec = (id) => {
         ['dash', 'upload', 'orders', 'manage'].forEach(s => {
@@ -167,15 +186,59 @@
         document.getElementById('c-prods').innerText = p.size;
     }
 
+    window.addVariantField = () => {
+        const list = document.getElementById('variant-list');
+        const idx = variants.length;
+        const item = document.createElement('div');
+        item.className = 'variant-item';
+        item.innerHTML = `
+            <input type="color" class="variant-color" value="#cccccc" onchange="variants[${idx}].color = this.value">
+            <div class="variant-details">
+                <input type="text" placeholder="Variant Name (e.g., Red, Blue)" onchange="variants[${idx}].name = this.value">
+                <input type="text" placeholder="Image URL (optional)" onchange="variants[${idx}].image = this.value">
+                <input type="number" placeholder="Price (optional - if diff from main)" onchange="variants[${idx}].price = this.value ? parseInt(this.value) : null">
+            </div>
+            <button class="variant-remove" onclick="removeVariant(${idx})">Remove</button>
+        `;
+        list.appendChild(item);
+        variants.push({ color: '#cccccc', name: '', image: '', price: null });
+    };
+
+    window.removeVariant = (idx) => {
+        variants.splice(idx, 1);
+        renderVariants();
+    };
+
+    function renderVariants() {
+        const list = document.getElementById('variant-list');
+        list.innerHTML = '';
+        variants.forEach((v, idx) => {
+            const item = document.createElement('div');
+            item.className = 'variant-item';
+            item.innerHTML = `
+                <input type="color" class="variant-color" value="${v.color}" onchange="variants[${idx}].color = this.value">
+                <div class="variant-details">
+                    <input type="text" placeholder="Variant Name" value="${v.name}" onchange="variants[${idx}].name = this.value">
+                    <input type="text" placeholder="Image URL" value="${v.image || ''}" onchange="variants[${idx}].image = this.value">
+                    <input type="number" placeholder="Price (optional)" value="${v.price || ''}" onchange="variants[${idx}].price = this.value ? parseInt(this.value) : null">
+                </div>
+                <button class="variant-remove" onclick="removeVariant(${idx})">Remove</button>
+            `;
+            list.appendChild(item);
+        });
+    }
+
     async function fetchProducts() {
         const snap = await getDocs(query(collection(db, "products"), orderBy("time", "desc")));
         const tbody = document.getElementById('prod-list');
         tbody.innerHTML = "";
         snap.forEach(dSnap => {
             const p = dSnap.data();
+            const varCount = (p.variants && p.variants.length) || 0;
             tbody.innerHTML += `<tr>
                 <td><b>${p.name}</b><br><small>${p.category}</small></td>
                 <td>₹${p.price}</td>
+                <td><span style="background:#222; padding:4px 8px; border-radius:4px; font-size:12px;">${varCount} colours</span></td>
                 <td>
                     <button class="btn-edit" onclick="startEdit('${dSnap.id}')"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-del" onclick="deleteProd('${dSnap.id}')"><i class="fa-solid fa-trash"></i></button>
@@ -200,7 +263,6 @@
         document.getElementById('p-price').value = p.price;
         document.getElementById('p-category').value = p.category;
         
-        // Fill links
         document.getElementById('p-img1').value = p.images[0] || "";
         document.getElementById('p-img2').value = p.images[1] || "";
         document.getElementById('p-img3').value = p.images[2] || "";
@@ -210,6 +272,10 @@
         document.querySelectorAll('input[name="sz"]').forEach(cb => {
             cb.checked = p.sizes ? p.sizes.includes(cb.value) : false;
         });
+
+        variants = p.variants ? JSON.parse(JSON.stringify(p.variants)) : [];
+        renderVariants();
+
         document.getElementById('save-btn').innerText = "Update Product";
         document.getElementById('cancel-edit').style.display = "block";
         showSec('upload');
@@ -219,13 +285,19 @@
         const editId = document.getElementById('edit-id').value;
         const sizes = Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c => c.value);
         
-        // Collect all links in an array
         const imgs = [
             document.getElementById('p-img1').value,
             document.getElementById('p-img2').value,
             document.getElementById('p-img3').value,
             document.getElementById('p-img4').value
-        ].filter(url => url !== ""); // Khali links hata do
+        ].filter(url => url !== "");
+
+        const cleanVariants = variants.filter(v => v.name.trim() !== '').map(v => ({
+            name: v.name,
+            color: v.color,
+            image: v.image || null,
+            price: v.price || null
+        }));
 
         const data = {
             name: document.getElementById('p-name').value,
@@ -234,6 +306,8 @@
             images: imgs,
             sizes: sizes,
             desc: document.getElementById('p-desc').value,
+            variants: cleanVariants,
+            variantLabel: "Colours",
             time: serverTimestamp()
         };
 
@@ -246,7 +320,25 @@
             await addDoc(collection(db, "products"), data);
             alert("Add ho gaya!");
         }
+        
+        variants = [];
+        document.getElementById('edit-id').value = '';
+        document.getElementById('upload-title').innerText = 'Upload Product';
+        document.getElementById('save-btn').innerText = 'Push to Firebase';
+        document.getElementById('cancel-edit').style.display = 'none';
+        document.getElementById('p-name').value = '';
+        document.getElementById('p-price').value = '';
+        renderVariants();
         location.reload();
+    };
+
+    document.getElementById('cancel-edit').onclick = () => {
+        variants = [];
+        document.getElementById('edit-id').value = '';
+        document.getElementById('upload-title').innerText = 'Upload Product';
+        document.getElementById('save-btn').innerText = 'Push to Firebase';
+        document.getElementById('cancel-edit').style.display = 'none';
+        renderVariants();
     };
 
     window.changeStatus = async (id, val) => {
