@@ -54,7 +54,7 @@
 
 <div class="main">
     <div id="dash-sec">
-        <h1>Dashboard</h1>
+        <h1>Dashboard Overview</h1>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="content-card"><h3>Orders</h3><p id="c-ords" style="font-size:28px; color:var(--primary); margin:0">0</p></div>
             <div class="content-card"><h3>Items</h3><p id="c-prods" style="font-size:28px; color:var(--primary); margin:0">0</p></div>
@@ -135,7 +135,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAchWzhIxqmS7G0HPpvuq6WBwcr8pXzFAE",
@@ -147,13 +147,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // FIX 1: window object par attach kiya taaki button click kaam kare
     window.showSec = (id) => {
         ['dash', 'upload', 'orders', 'manage'].forEach(s => {
             document.getElementById(s + '-sec').style.display = 'none';
         });
         document.getElementById(id + '-sec').style.display = 'block';
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('active');
         
         if(id === 'orders') fetchOrders();
         if(id === 'dash') updateStats();
@@ -200,7 +200,6 @@
         document.getElementById('p-price').value = p.price;
         document.getElementById('p-category').value = p.category;
         
-        // Fill links
         document.getElementById('p-img1').value = p.images[0] || "";
         document.getElementById('p-img2').value = p.images[1] || "";
         document.getElementById('p-img3').value = p.images[2] || "";
@@ -218,14 +217,12 @@
     document.getElementById('save-btn').onclick = async () => {
         const editId = document.getElementById('edit-id').value;
         const sizes = Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c => c.value);
-        
-        // Collect all links in an array
         const imgs = [
             document.getElementById('p-img1').value,
             document.getElementById('p-img2').value,
             document.getElementById('p-img3').value,
             document.getElementById('p-img4').value
-        ].filter(url => url !== ""); // Khali links hata do
+        ].filter(url => url !== "");
 
         const data = {
             name: document.getElementById('p-name').value,
@@ -237,7 +234,7 @@
             time: serverTimestamp()
         };
 
-        if(!data.name || imgs.length === 0) return alert("Bhai, kam se kam 1 photo link aur naam daalo!");
+        if(!data.name || imgs.length === 0) return alert("Details bharo!");
 
         if(editId) {
             await updateDoc(doc(db, "products", editId), data);
@@ -249,31 +246,40 @@
         location.reload();
     };
 
+    // FIX 2: window par attach kiya taaki onchange kaam kare
     window.changeStatus = async (id, val) => {
-        await updateDoc(doc(db, "orders", id), { status: val });
-        alert("Status updated!");
+        try {
+            await updateDoc(doc(db, "orders", id), { status: val });
+            alert("Status Update Ho Gaya! Customer ko dikh jayega.");
+        } catch (e) {
+            console.error(e);
+            alert("Galti hui!");
+        }
     };
 
     async function fetchOrders() {
-        const snap = await getDocs(query(collection(db, "orders"), orderBy("time", "desc")));
-        const tbody = document.getElementById('order-list');
-        tbody.innerHTML = "";
-        snap.forEach(docSnap => {
-            const o = docSnap.data();
-            tbody.innerHTML += `<tr>
-                <td><b>${o.customer}</b><br>${o.phone}</td>
-                <td>${o.name}<br><small>Size: ${o.size}</small></td>
-                <td>₹${o.price}</td>
-                <td>${o.address}</td>
-                <td>
-                    <select class="status-select" onchange="changeStatus('${docSnap.id}', this.value)">
-                        <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="Packed" ${o.status === 'Packed' ? 'selected' : ''}>Packed</option>
-                        <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                        <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                    </select>
-                </td>
-            </tr>`;
+        const q = query(collection(db, "orders"), orderBy("time", "desc"));
+        // Real-time listener laga diya taaki data turant load ho
+        onSnapshot(q, (snap) => {
+            const tbody = document.getElementById('order-list');
+            tbody.innerHTML = "";
+            snap.forEach(docSnap => {
+                const o = docSnap.data();
+                tbody.innerHTML += `<tr>
+                    <td><b>${o.customer}</b><br>${o.phone}</td>
+                    <td>${o.name}<br><small>Size: ${o.size}</small></td>
+                    <td>₹${o.price}</td>
+                    <td>${o.address}</td>
+                    <td>
+                        <select onchange="changeStatus('${docSnap.id}', this.value)" style="border: 1px solid var(--primary); padding: 5px;">
+                            <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="Packed" ${o.status === 'Packed' ? 'selected' : ''}>Packed</option>
+                            <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                        </select>
+                    </td>
+                </tr>`;
+            });
         });
     }
 
