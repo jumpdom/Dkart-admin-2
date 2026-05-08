@@ -1,3 +1,18 @@
+🔧 Sabse Pehle Ye Fix Karein (Firestore Rules)
+Firebase Console → Firestore Database → Rules tab → ye rules paste karein:
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public read for products, reviews, settings (banner)
+    match /products/{doc} { allow read: if true; allow write: if true; }
+    match /reviews/{doc}  { allow read: if true; allow write: if true; }
+    match /settings/{doc} { allow read: if true; allow write: if true; }
+    match /orders/{doc}   { allow read: if true; allow write: if true; }
+  }
+}
+Publish dabayein. Aksar default rules hote hain allow read, write: if request.auth != null; — isi wajah se admin (logged in) save kar paata hai par customer (no login) read nahi kar paata. Banner aap admin me check karke dekhein, customer site refresh karein → ab dikhega.
+🆕 Updated Admin Code (with Size-wise Price + COD Price)
+Aapne bola tha ki "admin code v de dunga, fix kar dena" — to maine usme per-size price/MRP/COD price ke fields bhi add kar diye hain (jo customer-side me already support hain). Ye raha complete updated admin code (one-click copy):
 <!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -70,7 +85,16 @@ tr:hover td{background:#0d0d0d}
 .switch.on::after{left:25px;background:#000}
 .helper{font-size:12px;color:var(--muted);margin:6px 0 10px;line-height:1.5}
 .helper b{color:var(--primary)}
-@media (max-width:900px){.sidebar{width:64px}.sidebar span{display:none}.main{margin-left:64px;padding:18px;width:calc(100% - 64px)}.row{flex-direction:column;gap:0}.logo-area{font-size:14px;padding:18px 4px}.logo-area span{display:none}}
+/* PER-SIZE PRICING TABLE */
+.size-price-box{background:#0a0a0a;border:1.5px solid #2a2a00;border-radius:10px;padding:14px;margin-bottom:12px}
+.size-price-empty{color:#555;font-size:12px;text-align:center;padding:10px}
+.sp-row{display:grid;grid-template-columns:60px 1fr 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;padding:8px;background:#151515;border-radius:8px;border:1px solid #222}
+.sp-row .sp-label{font-weight:800;color:var(--primary);text-align:center;font-size:14px}
+.sp-row input{margin:0;padding:9px 10px;font-size:13px}
+.sp-head{display:grid;grid-template-columns:60px 1fr 1fr 1fr;gap:8px;font-size:10px;color:#888;text-transform:uppercase;font-weight:700;padding:0 8px;margin-bottom:6px;letter-spacing:.5px}
+.cod-section{background:#0a0a0a;border:1.5px solid #003d1a;border-radius:10px;padding:14px;margin-bottom:12px}
+.cod-section h4{margin:0 0 10px;color:var(--success);font-size:13px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+@media (max-width:900px){.sidebar{width:64px}.sidebar span{display:none}.main{margin-left:64px;padding:18px;width:calc(100% - 64px)}.row{flex-direction:column;gap:0}.logo-area{font-size:14px;padding:18px 4px}.logo-area span{display:none}.sp-row,.sp-head{grid-template-columns:50px 1fr 1fr 1fr;gap:5px}.sp-row input{padding:7px 8px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -103,8 +127,10 @@ tr:hover td{background:#0d0d0d}
         <input type="hidden" id="edit-id">
         <div class="row">
             <div><label>Product Name</label><input type="text" id="p-name" placeholder="eg. Cotton T-Shirt"></div>
-            <div style="max-width:140px"><label>Price (₹)</label><input type="number" id="p-price" placeholder="499"></div>
+            <div style="max-width:140px"><label>Price (₹) *</label><input type="number" id="p-price" placeholder="499"></div>
+            <div style="max-width:140px"><label>MRP (₹)</label><input type="number" id="p-mrp" placeholder="699"></div>
         </div>
+        <p class="helper">Ye base price hai. <b>Per-size alag price</b> niche set kar sakte ho. MRP strikethrough wala daam hai (optional).</p>
         <label>Category</label>
         <select id="p-category">
             <option value="men">Men</option><option value="women">Women</option><option value="cosmetics">Cosmetics</option>
@@ -115,15 +141,34 @@ tr:hover td{background:#0d0d0d}
         <input type="text" id="p-img2" placeholder="Photo 2 (Optional)">
         <input type="text" id="p-img3" placeholder="Photo 3 (Optional)">
         <input type="text" id="p-img4" placeholder="Photo 4 (Optional)">
+
         <label>Available Sizes</label>
-        <div class="size-container">
-            <label class="size-item"><input type="checkbox" name="sz" value="S">S</label>
-            <label class="size-item"><input type="checkbox" name="sz" value="M">M</label>
-            <label class="size-item"><input type="checkbox" name="sz" value="L">L</label>
-            <label class="size-item"><input type="checkbox" name="sz" value="XL">XL</label>
-            <label class="size-item"><input type="checkbox" name="sz" value="XXL">XXL</label>
-            <label class="size-item" style="color:var(--primary)"><input type="checkbox" name="sz" value="Free Size">Free Size</label>
+        <div class="size-container" id="size-container">
+            <label class="size-item"><input type="checkbox" name="sz" value="S" onchange="renderSizePrices()">S</label>
+            <label class="size-item"><input type="checkbox" name="sz" value="M" onchange="renderSizePrices()">M</label>
+            <label class="size-item"><input type="checkbox" name="sz" value="L" onchange="renderSizePrices()">L</label>
+            <label class="size-item"><input type="checkbox" name="sz" value="XL" onchange="renderSizePrices()">XL</label>
+            <label class="size-item"><input type="checkbox" name="sz" value="XXL" onchange="renderSizePrices()">XXL</label>
+            <label class="size-item" style="color:var(--primary)"><input type="checkbox" name="sz" value="Free Size" onchange="renderSizePrices()">Free Size</label>
         </div>
+
+        <!-- PER-SIZE PRICING -->
+        <label style="margin-top:14px"><i class="fa-solid fa-tag" style="color:var(--primary)"></i> Per-Size Pricing (Optional)</label>
+        <p class="helper">Har size ka <b>alag price/MRP/COD</b> set karein. Khali chhodne par base price use hoga. Bara size ka jyada price daalein, customer ko sahi dikhega.</p>
+        <div class="size-price-box" id="size-price-box">
+            <div class="size-price-empty">Pehle upar se size select karein</div>
+        </div>
+
+        <!-- COD SECTION -->
+        <div class="cod-section">
+            <h4><i class="fa-solid fa-truck-fast"></i> Cash On Delivery (COD) Settings</h4>
+            <div class="row">
+                <div><label>COD Price (₹)</label><input type="number" id="p-codPrice" placeholder="Pure product ka COD price"></div>
+                <div><label>OR COD Extra Fee (₹)</label><input type="number" id="p-codExtra" placeholder="40"></div>
+            </div>
+            <p class="helper">Priority: <b>Per-size COD</b> (upar table me) > <b>COD Price</b> > <b>COD Extra</b>. Dono khali = base price COD ke liye use hoga.</p>
+        </div>
+
         <label style="margin-top:14px">Product Variants (Colours / Flavours)</label>
         <p class="helper">Agar product alag-alag colour me hai to yahan add karo. Customer ko detail page par <b>4 chhote box</b> me dikhega. Khali chhodoge to hide rahega.</p>
         <div class="variant-list" id="variant-list"></div>
@@ -159,6 +204,7 @@ tr:hover td{background:#0d0d0d}
     <div class="content-card">
         <label>Banner Image URL</label>
         <input type="text" id="banner-url" placeholder="https://... (PostImage, Imgur etc. ka direct link)">
+        <p class="helper">⚠️ <b>Direct image URL</b> hona chahiye (jaise <code>i.postimg.cc/xxx/img.jpg</code>). Page URL mat daalna. Right-click image → "Copy image address" se lo.</p>
         <div class="toggle-row">
             <div class="switch" id="banner-switch" onclick="toggleBannerSwitch()"></div>
             <div><b style="color:#fff">Banner Active</b><div class="helper" style="margin:0">Off karne par customer ko banner hide ho jayega</div></div>
@@ -181,6 +227,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 let variants = [];
 let bannerActive = true;
+let sizePriceData = {}; // { S: {price, mrp, codPrice}, M: {...} }
 
 window.showSec = (id, el) => {
     ['dash','upload','orders','manage','banner'].forEach(s => document.getElementById(s+'-sec').style.display='none');
@@ -223,13 +270,36 @@ function renderVariants(){
     });
 }
 
+/* ===== PER-SIZE PRICING UI ===== */
+window.renderSizePrices = () => {
+    const checked = Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c=>c.value);
+    const box = document.getElementById('size-price-box');
+    if(checked.length === 0){ box.innerHTML = '<div class="size-price-empty">Pehle upar se size select karein</div>'; return; }
+    let html = '<div class="sp-head"><div>SIZE</div><div>PRICE (₹)</div><div>MRP (₹)</div><div>COD (₹)</div></div>';
+    checked.forEach(s=>{
+        const data = sizePriceData[s] || {};
+        html += `<div class="sp-row">
+            <div class="sp-label">${s}</div>
+            <input type="number" placeholder="299" value="${data.price||''}" oninput="updateSizePrice('${s}','price',this.value)">
+            <input type="number" placeholder="499" value="${data.mrp||''}" oninput="updateSizePrice('${s}','mrp',this.value)">
+            <input type="number" placeholder="320" value="${data.codPrice||''}" oninput="updateSizePrice('${s}','codPrice',this.value)">
+        </div>`;
+    });
+    box.innerHTML = html;
+};
+window.updateSizePrice = (size, field, val) => {
+    if(!sizePriceData[size]) sizePriceData[size] = {};
+    sizePriceData[size][field] = val ? parseInt(val) : null;
+};
+
 async function fetchProducts(){
     const snap=await getDocs(query(collection(db,"products"),orderBy("time","desc")));
     const tbody=document.getElementById('prod-list'); tbody.innerHTML='';
     snap.forEach(d=>{
         const p=d.data(); const vc=(p.variants&&p.variants.length)||0;
+        const hasSizePrices = p.sizePrices && Object.keys(p.sizePrices).length;
         tbody.innerHTML+=`<tr><td><b>${p.name}</b><br><small style="color:#888">${p.category}</small></td>
-            <td><b style="color:var(--primary)">₹${p.price}</b></td>
+            <td><b style="color:var(--primary)">₹${p.price}</b>${hasSizePrices?'<br><small style="color:#0f0">size-wise</small>':''}</td>
             <td>${vc>0?`<span class="badge badge-yellow">${vc} colours</span>`:'<span style="color:#555">—</span>'}</td>
             <td style="text-align:right"><button class="btn-edit" onclick="startEdit('${d.id}')"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-del" onclick="deleteProd('${d.id}')"><i class="fa-solid fa-trash"></i></button></td></tr>`;
@@ -245,13 +315,28 @@ window.startEdit = async(id) => {
     document.getElementById('edit-id').value=id;
     document.getElementById('p-name').value=p.name||'';
     document.getElementById('p-price').value=p.price||'';
+    document.getElementById('p-mrp').value=p.mrp||'';
     document.getElementById('p-category').value=p.category||'men';
     document.getElementById('p-img1').value=(p.images&&p.images[0])||'';
     document.getElementById('p-img2').value=(p.images&&p.images[1])||'';
     document.getElementById('p-img3').value=(p.images&&p.images[2])||'';
     document.getElementById('p-img4').value=(p.images&&p.images[3])||'';
     document.getElementById('p-desc').value=p.desc||'';
+    document.getElementById('p-codPrice').value=p.codPrice||'';
+    document.getElementById('p-codExtra').value=p.codExtra||'';
     document.querySelectorAll('input[name="sz"]').forEach(cb=>{cb.checked=p.sizes?p.sizes.includes(cb.value):false;});
+    // Build sizePriceData from product
+    sizePriceData = {};
+    if(p.sizes){
+        p.sizes.forEach(s=>{
+            sizePriceData[s] = {
+                price: (p.sizePrices && p.sizePrices[s]) || null,
+                mrp:   (p.sizeMRPs   && p.sizeMRPs[s])   || null,
+                codPrice: (p.codPrices && p.codPrices[s]) || null
+            };
+        });
+    }
+    renderSizePrices();
     variants=p.variants?JSON.parse(JSON.stringify(p.variants)):[]; renderVariants();
     document.getElementById('save-btn').innerHTML='<i class="fa-solid fa-cloud-arrow-up"></i> Update Product';
     document.getElementById('cancel-edit').style.display='block';
@@ -263,14 +348,37 @@ document.getElementById('save-btn').onclick = async() => {
     const sizes=Array.from(document.querySelectorAll('input[name="sz"]:checked')).map(c=>c.value);
     const imgs=['p-img1','p-img2','p-img3','p-img4'].map(id=>document.getElementById(id).value.trim()).filter(x=>x);
     const cleanVariants=variants.filter(v=>v.name && v.name.trim()!=='').map(v=>({name:v.name,color:v.color,image:v.image||null,price:v.price||null}));
+    
+    // Build sizePrices, sizeMRPs, codPrices from sizePriceData (only for selected sizes)
+    const sizePrices = {}, sizeMRPs = {}, codPrices = {};
+    sizes.forEach(s=>{
+        const d = sizePriceData[s];
+        if(d){
+            if(d.price) sizePrices[s] = d.price;
+            if(d.mrp) sizeMRPs[s] = d.mrp;
+            if(d.codPrice) codPrices[s] = d.codPrice;
+        }
+    });
+    
+    const codPriceVal = document.getElementById('p-codPrice').value.trim();
+    const codExtraVal = document.getElementById('p-codExtra').value.trim();
+    const mrpVal = document.getElementById('p-mrp').value.trim();
+    
     const data={
         name:document.getElementById('p-name').value,
         price:document.getElementById('p-price').value,
+        mrp: mrpVal ? parseInt(mrpVal) : null,
         category:document.getElementById('p-category').value,
         images:imgs, sizes, desc:document.getElementById('p-desc').value,
-        variants:cleanVariants, variantLabel:"Colours", time:serverTimestamp()
+        variants:cleanVariants, variantLabel:"Colours",
+        sizePrices: Object.keys(sizePrices).length ? sizePrices : null,
+        sizeMRPs:   Object.keys(sizeMRPs).length   ? sizeMRPs   : null,
+        codPrices:  Object.keys(codPrices).length  ? codPrices  : null,
+        codPrice:   codPriceVal ? parseInt(codPriceVal) : null,
+        codExtra:   codExtraVal ? parseInt(codExtraVal) : null,
+        time:serverTimestamp()
     };
-    if(!data.name || !imgs.length) return alert("Naam aur kam se kam 1 photo daalo!");
+    if(!data.name || !imgs.length || !data.price) return alert("Naam, Price aur kam se kam 1 photo daalo!");
     if(editId){ await updateDoc(doc(db,"products",editId),data); alert("Update ho gaya!"); }
     else{ await addDoc(collection(db,"products"),data); alert("Product add ho gaya!"); }
     location.reload();
@@ -279,7 +387,6 @@ document.getElementById('save-btn').onclick = async() => {
 document.getElementById('cancel-edit').onclick = () => location.reload();
 
 window.changeStatus = async(id,val) => { await updateDoc(doc(db,"orders",id),{status:val}); };
-
 window.deleteOrder = async(id) => { if(confirm("Ye order delete karna hai? Ye action reverse nahi ho sakta!")){ await deleteDoc(doc(db,"orders",id)); fetchOrders(); } };
 
 async function fetchOrders(){
@@ -304,27 +411,31 @@ async function fetchOrders(){
 
 // ============ BANNER ============
 async function loadBanner(){
-    const ref=doc(db,"settings","home");
-    const snap=await getDoc(ref);
-    const prev=document.getElementById('banner-preview');
-    const sw=document.getElementById('banner-switch');
-    if(snap.exists()){
-        const d=snap.data();
-        document.getElementById('banner-url').value=d.bannerUrl||'';
-        bannerActive = d.bannerActive !== false;
-        if(d.bannerUrl){ prev.classList.remove('empty'); prev.innerHTML=`<img src="${d.bannerUrl}">`; }
-        else { prev.classList.add('empty'); prev.innerHTML=''; }
-    } else { bannerActive=true; prev.classList.add('empty'); prev.innerHTML=''; }
-    sw.classList.toggle('on',bannerActive);
+    try{
+        const ref=doc(db,"settings","home");
+        const snap=await getDoc(ref);
+        const prev=document.getElementById('banner-preview');
+        const sw=document.getElementById('banner-switch');
+        if(snap.exists()){
+            const d=snap.data();
+            document.getElementById('banner-url').value=d.bannerUrl||'';
+            bannerActive = d.bannerActive !== false;
+            if(d.bannerUrl){ prev.classList.remove('empty'); prev.innerHTML=`<img src="${d.bannerUrl}" onerror="this.parentNode.classList.add('empty');this.remove();this.parentNode.innerHTML='<span style=color:#ff4757>❌ Image URL galat hai!</span>'">`; }
+            else { prev.classList.add('empty'); prev.innerHTML=''; }
+        } else { bannerActive=true; prev.classList.add('empty'); prev.innerHTML=''; }
+        sw.classList.toggle('on',bannerActive);
+    }catch(e){ alert("Banner load error: "+e.message+"\n\nFirestore Rules check karein!"); }
 }
 window.toggleBannerSwitch = () => { bannerActive=!bannerActive; document.getElementById('banner-switch').classList.toggle('on',bannerActive); };
 
 window.saveBanner = async() => {
     const url=document.getElementById('banner-url').value.trim();
     if(!url) return alert("Pehle banner URL daalein!");
-    await setDoc(doc(db,"settings","home"),{bannerUrl:url,bannerActive:bannerActive,updated:serverTimestamp()},{merge:true});
-    alert("Banner save ho gaya! Customer website par dikhega.");
-    loadBanner();
+    try{
+        await setDoc(doc(db,"settings","home"),{bannerUrl:url,bannerActive:bannerActive,updated:serverTimestamp()},{merge:true});
+        alert("✅ Banner save ho gaya!\n\nAgar customer site pe nahi dikh raha to:\n1. Firestore Rules check karein (settings collection public read allow ho)\n2. URL direct image ka ho (i.postimg.cc/xxx.jpg jaisa)\n3. Customer page hard refresh karein (Ctrl+Shift+R)");
+        loadBanner();
+    }catch(e){ alert("Save error: "+e.message); }
 };
 window.removeBanner = async() => {
     if(!confirm("Banner remove karna hai?")) return;
