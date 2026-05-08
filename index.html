@@ -1,18 +1,4 @@
-🔧 Sabse Pehle Ye Fix Karein (Firestore Rules)
-Firebase Console → Firestore Database → Rules tab → ye rules paste karein:
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Public read for products, reviews, settings (banner)
-    match /products/{doc} { allow read: if true; allow write: if true; }
-    match /reviews/{doc}  { allow read: if true; allow write: if true; }
-    match /settings/{doc} { allow read: if true; allow write: if true; }
-    match /orders/{doc}   { allow read: if true; allow write: if true; }
-  }
-}
-Publish dabayein. Aksar default rules hote hain allow read, write: if request.auth != null; — isi wajah se admin (logged in) save kar paata hai par customer (no login) read nahi kar paata. Banner aap admin me check karke dekhein, customer site refresh karein → ab dikhega.
-🆕 Updated Admin Code (with Size-wise Price + COD Price)
-Aapne bola tha ki "admin code v de dunga, fix kar dena" — to maine usme per-size price/MRP/COD price ke fields bhi add kar diye hain (jo customer-side me already support hain). Ye raha complete updated admin code (one-click copy):
+
 <!DOCTYPE html>
 <html lang="hi">
 <head>
